@@ -1,0 +1,3 @@
+sudo apt update
+sudo apt install -y python3-pip git zip unzip openjdk-17-jdk python3-virtualenv libffi-dev libssl-dev libtinfo5
+pip install --user buildozer Cython
