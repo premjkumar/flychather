@@ -2,6 +2,7 @@ import pygame
 import random
 import sys
 import os
+import glob
 
 # Initialize pygame
 pygame.init()
@@ -17,21 +18,69 @@ WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 
-# Load images (using placeholders since we can't download from internet)
-# In a real implementation, you would load actual fly images
-def create_fly_image(color=(255, 255, 0), size=30):
-    """Create a simple fly image using pygame"""
+# Directory containing fly images
+DOWNLOADS_DIR = "/home/sharon/downloads"
+
+def load_fly_status_images(size=(40, 40)):
+    """
+    Search /home/sharon/downloads for images starting with fly_* 
+    and return images for different fly statuses (alive, dead, etc.).
+    """
+    fly_images = {}
+    
+    if os.path.exists(DOWNLOADS_DIR):
+        # Look for image files starting with fly_
+        pattern = os.path.join(DOWNLOADS_DIR, "fly_*")
+        matching_files = glob.glob(pattern)
+        
+        for filepath in matching_files:
+            filename = os.path.basename(filepath).lower()
+            # Extract status from filename (e.g., fly_alive.png -> alive, fly_dead.png -> dead)
+            name_part = os.path.splitext(filename)[0]  # remove extension
+            status_key = name_part.replace("fly_", "", 1)
+            
+            try:
+                img = pygame.image.load(filepath).convert_alpha()
+                img = pygame.transform.scale(img, size)
+                fly_images[status_key] = img
+            except Exception as e:
+                print(f"Could not load image {filepath}: {e}")
+
+    return fly_images
+
+# Fallback shape generators if images are missing
+def create_fallback_fly_image(color=(255, 255, 0), size=40):
+    """Create a simple fly image using pygame drawing"""
     surface = pygame.Surface((size, size), pygame.SRCALPHA)
-    pygame.draw.circle(surface, color, (size//2, size//2), size//2)
-    pygame.draw.circle(surface, BLACK, (size//2, size//2), size//4)
+    pygame.draw.circle(surface, color, (size // 2, size // 2), size // 2)
+    pygame.draw.circle(surface, BLACK, (size // 2, size // 2), size // 4)
     return surface
 
-def create_dead_fly_image():
+def create_fallback_dead_fly_image(size=40):
     """Create a simple dead fly image"""
-    surface = pygame.Surface((30, 30), pygame.SRCALPHA)
-    pygame.draw.circle(surface, (150, 75, 0), (15, 15), 15)
-    pygame.draw.circle(surface, BLACK, (15, 15), 7)
+    surface = pygame.Surface((size, size), pygame.SRCALPHA)
+    pygame.draw.circle(surface, (150, 75, 0), (size // 2, size // 2), size // 2)
+    pygame.draw.circle(surface, BLACK, (size // 2, size // 2), size // 4)
     return surface
+
+# Preload loaded status images or create fallbacks
+LOADED_IMAGES = load_fly_status_images(size=(40, 40))
+
+def get_fly_image(status):
+    """Retrieve status image by key (e.g. 'alive', 'dead') or fallback"""
+    if status in LOADED_IMAGES:
+        return LOADED_IMAGES[status]
+    
+    # Try finding matching key containing the status word
+    for key in LOADED_IMAGES:
+        if status in key:
+            return LOADED_IMAGES[key]
+            
+    # Default fallbacks
+    if status in ['alive', 'fly']:
+        return create_fallback_fly_image()
+    else:
+        return create_fallback_dead_fly_image()
 
 # Fly class
 class Fly:
@@ -41,8 +90,11 @@ class Fly:
         self.y = random.randint(50, SCREEN_HEIGHT - 50)
         self.speed_x = random.choice([-3, -2, -1, 1, 2, 3])
         self.speed_y = random.choice([-3, -2, -1, 1, 2, 3])
-        self.image = create_fly_image()
-        self.dead_image = create_dead_fly_image()
+        
+        # Load status images
+        self.image = get_fly_image('alive')
+        self.dead_image = get_fly_image('dead')
+        
         self.rect = self.image.get_rect(center=(self.x, self.y))
         self.buzz_timer = 0
         self.buzz_interval = 30  # frames between buzzes
