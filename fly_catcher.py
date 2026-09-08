@@ -9,8 +9,11 @@ import math
 pygame.init()
 
 # Screen dimensions
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
+infoObject = pygame.display.Info()
+SCREEN_WIDTH = infoObject.current_w if infoObject.current_w > 0 else 800
+SCREEN_HEIGHT = infoObject.current_h if infoObject.current_h > 0 else 600
+
+# Set screen mode (supports desktop and mobile scaling)
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Fly Catcher - Deluxe Edition")
 
@@ -208,6 +211,7 @@ class FlyCatcherGame:
         self.font_medium = pygame.font.Font(None, 32)
         self.font_small = pygame.font.Font(None, 24)
         pygame.mouse.set_visible(False)  # Hide default cursor for custom swatter
+        self.last_touch_pos = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
         self.reset_game()
         
     def reset_game(self):
@@ -256,6 +260,7 @@ class FlyCatcherGame:
                 self.effects.remove(effect)
 
     def handle_click(self, pos):
+        self.last_touch_pos = pos
         if self.game_over:
             self.reset_game()
             return
@@ -346,6 +351,8 @@ class FlyCatcherGame:
 
         # Draw cursor swatter
         mouse_pos = pygame.mouse.get_pos()
+        if mouse_pos == (0, 0):
+            mouse_pos = self.last_touch_pos
         self.draw_swatter_cursor(surface, mouse_pos)
 
 # Main game loop
@@ -363,6 +370,9 @@ def main():
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:  # Left click or touch
                     game.handle_click(pygame.mouse.get_pos())
+            elif event.type == pygame.FINGERDOWN:
+                touch_pos = (int(event.x * SCREEN_WIDTH), int(event.y * SCREEN_HEIGHT))
+                game.handle_click(touch_pos)
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_r and game.game_over:
                     game.reset_game()
