@@ -37,12 +37,6 @@ android.api = 33
 # (int) Minimum API your APK will support.
 android.minapi = 21
 
-# (str) Android NDK version to use
-# android.ndk = 25b
-
-# (bool) If True, then skip trying to update the Android sdk
-# android.skip_update = False
-
 # (bool) If True, then automatically accept SDK licenses
 android.accept_sdk_licenses = True
 
@@ -51,4 +45,8 @@ android.archs = arm64-v8a, armeabi-v7a
 
 [buildozer]
 
-# (int) Log level (0 = error only, 1 = info, 2 = debug (with
+# (int) Log level (0 = error only, 1 = info, 2 = debug (with debug output of commands))
+log_level = 2
+
+# (int) Display warning if buildozer is run as root (0 = false, 1 = true)
+warn_on_root = 1

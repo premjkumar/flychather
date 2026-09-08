@@ -24,30 +24,37 @@ ACCENT_GOLD = (241, 196, 15)
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 
-# Directory containing fly images
-DOWNLOADS_DIR = "/home/sharon/downloads"
+# Possible directories containing fly images
+POSSIBLE_DIRS = [
+    os.path.join(os.getcwd(), "assets"),
+    os.path.join(os.getcwd()),
+    "/home/sharon/downloads"
+]
 
 def load_fly_status_images(size=(45, 45)):
     """
-    Search /home/sharon/downloads for images starting with fly_* 
+    Search directories for images starting with fly_* 
     and return images for different fly statuses.
     """
     fly_images = {}
-    if os.path.exists(DOWNLOADS_DIR):
-        pattern = os.path.join(DOWNLOADS_DIR, "fly_*")
-        matching_files = glob.glob(pattern)
-        
-        for filepath in matching_files:
-            filename = os.path.basename(filepath).lower()
-            name_part = os.path.splitext(filename)[0]
-            status_key = name_part.replace("fly_", "", 1)
+    
+    for dir_path in POSSIBLE_DIRS:
+        if os.path.exists(dir_path):
+            pattern = os.path.join(dir_path, "fly_*")
+            matching_files = glob.glob(pattern)
             
-            try:
-                img = pygame.image.load(filepath).convert_alpha()
-                img = pygame.transform.scale(img, size)
-                fly_images[status_key] = img
-            except Exception as e:
-                print(f"Could not load image {filepath}: {e}")
+            for filepath in matching_files:
+                filename = os.path.basename(filepath).lower()
+                name_part = os.path.splitext(filename)[0]
+                status_key = name_part.replace("fly_", "", 1)
+                
+                if status_key not in fly_images:
+                    try:
+                        img = pygame.image.load(filepath).convert_alpha()
+                        img = pygame.transform.scale(img, size)
+                        fly_images[status_key] = img
+                    except Exception as e:
+                        print(f"Could not load image {filepath}: {e}")
 
     return fly_images
 
@@ -250,6 +257,7 @@ class FlyCatcherGame:
 
     def handle_click(self, pos):
         if self.game_over:
+            self.reset_game()
             return
             
         self.swatter_angle = -25  # Swat animation tilt
@@ -330,7 +338,7 @@ class FlyCatcherGame:
 
             go_title = self.font_large.render("TIME'S UP!", True, ACCENT_RED)
             final_score = self.font_medium.render(f"Final Score: {self.score}", True, WHITE)
-            restart_msg = self.font_medium.render("Press 'R' to Restart", True, ACCENT_GREEN)
+            restart_msg = self.font_medium.render("Tap Screen or Press 'R' to Restart", True, ACCENT_GREEN)
 
             surface.blit(go_title, (SCREEN_WIDTH // 2 - go_title.get_width() // 2, 200))
             surface.blit(final_score, (SCREEN_WIDTH // 2 - final_score.get_width() // 2, 270))
@@ -353,7 +361,7 @@ def main():
             if event.type == pygame.QUIT:
                 running = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 1:  # Left click
+                if event.button == 1:  # Left click or touch
                     game.handle_click(pygame.mouse.get_pos())
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_r and game.game_over:
